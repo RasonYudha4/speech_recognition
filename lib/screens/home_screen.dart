@@ -6,22 +6,19 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF021907), // Background color of the Scaffold
+      backgroundColor: Color(0xFF021907),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: const EdgeInsets.only(top: 20),
             child: AppBar(
-              backgroundColor:
-                  Colors.transparent, // Make AppBar background transparent
-              elevation: 0, // Remove shadow
+              backgroundColor: Colors.transparent,
+              elevation: 0,
               flexibleSpace: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Leading icon
                   Padding(
-                    padding:
-                        const EdgeInsets.only(left: 16.0), // Add some padding
+                    padding: const EdgeInsets.only(left: 16.0),
                     child: IconButton(
                       icon: Icon(
                         Icons.chevron_left_rounded,
@@ -29,22 +26,20 @@ class HomeScreen extends StatelessWidget {
                         size: 50,
                       ),
                       onPressed: () {
-                        Navigator.pop(context); // Navigate back when pressed
+                        Navigator.pop(context);
                       },
                     ),
                   ),
-                  // Title
                   Center(
                     child: Text(
-                      'Summarizor AI',
+                      'Summarizon AI',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF2FF761),
                       ),
                     ),
                   ),
-                  // Action icon
                   Padding(
                     padding: const EdgeInsets.only(right: 16.0),
                     child: PopupMenuButton<String>(
@@ -63,10 +58,10 @@ class HomeScreen extends StatelessWidget {
                       itemBuilder: (BuildContext context) =>
                           <PopupMenuEntry<String>>[
                         PopupMenuItem<String>(
-                          value: 'Option 1',
+                          value: 'Change Language',
                           child: SizedBox(
-                            width: 150, // Set width
-                            height: 50, // Set height
+                            width: 150,
+                            height: 50,
                             child: Container(
                               height: 50,
                               alignment: Alignment.centerLeft,
@@ -79,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         PopupMenuItem<String>(
-                          value: 'Option 2',
+                          value: 'Chat History',
                           child: SizedBox(
                             width: 150,
                             height: 50,
@@ -104,27 +99,87 @@ class HomeScreen extends StatelessWidget {
           Expanded(
             child: ListView(
               children: [
-                // Chat messages go here
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0, right: 12),
+                  child: Align(
+                    alignment: Alignment.centerRight, // Align to the left
+                    child: Container(
+                      padding: EdgeInsets.all(16.0),
+                      margin: EdgeInsets.symmetric(vertical: 4.0),
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width *
+                            0.7, // Max 70% of screen width
+                      ),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF133E1E),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(24.0),
+                          topRight: Radius.circular(24.0),
+                          bottomLeft: Radius.circular(24.0),
+                          bottomRight: Radius.circular(0),
+                        ),
+                      ),
+                      child: Text(
+                        "Hello, how are you? I hope that you are doing well, since I miss you a lot. Remember the day when we have our first night",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0, left: 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: EdgeInsets.all(16.0),
+                      margin: EdgeInsets.symmetric(vertical: 4.0),
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        border: Border.all(
+                          color: Color(0xFF2FF761),
+                          width: 2.0,
+                        ),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(24.0),
+                          topRight: Radius.circular(24.0),
+                          bottomLeft: Radius.circular(0.0),
+                          bottomRight: Radius.circular(24.0),
+                        ),
+                      ),
+                      child: Text(
+                        "I'm good",
+                        style: TextStyle(
+                            color: Color(0xFF2FF761),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+              color: Colors.transparent,
             ),
             child: Row(
               children: [
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.attach_file, color: Colors.grey),
+                  icon: Icon(
+                    Icons.attach_file,
+                    color: Color(0xFF2FF761),
+                  ),
                   onSelected: (value) {
                     print("Selected: $value");
                   },
-                  color: Colors.white, // Background color of dropdown
+                  color: Color(0xFF133E1E),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(12.0), // Rounded corners
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                   itemBuilder: (BuildContext context) =>
                       <PopupMenuEntry<String>>[
@@ -132,19 +187,17 @@ class HomeScreen extends StatelessWidget {
                       value: 'Image',
                       child: Row(
                         children: [
-                          Icon(Icons.image, color: Colors.blue),
+                          Icon(
+                            Icons.image,
+                            color: Color(0xFF50E776),
+                          ),
                           SizedBox(width: 10),
-                          Text("Image"),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'Video',
-                      child: Row(
-                        children: [
-                          Icon(Icons.videocam, color: Colors.red),
-                          SizedBox(width: 10),
-                          Text("Video"),
+                          Text(
+                            "Image",
+                            style: TextStyle(
+                              color: Color(0xFF50E776),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -152,9 +205,17 @@ class HomeScreen extends StatelessWidget {
                       value: 'Document',
                       child: Row(
                         children: [
-                          Icon(Icons.insert_drive_file, color: Colors.green),
+                          Icon(
+                            Icons.insert_drive_file,
+                            color: Color(0xFF50E776),
+                          ),
                           SizedBox(width: 10),
-                          Text("Document"),
+                          Text(
+                            "Document",
+                            style: TextStyle(
+                              color: Color(0xFF50E776),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -162,9 +223,38 @@ class HomeScreen extends StatelessWidget {
                 ),
                 Expanded(
                   child: TextField(
+                    style: TextStyle(color: Colors.green), // Typed text color
                     decoration: InputDecoration(
                       hintText: "Type a message...",
-                      border: InputBorder.none,
+                      hintStyle:
+                          TextStyle(color: Colors.green), // Hint text color
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(24.0), // Rounded border
+                        borderSide: BorderSide(
+                            color: Colors.green, width: 2.0), // Green border
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24.0),
+                        borderSide: BorderSide(
+                            color: Colors.green,
+                            width: 2.0), // Green border when not focused
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24.0),
+                        borderSide: BorderSide(
+                            color: Colors.green,
+                            width: 2.5), // Green border when focused
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 12.0), // Padding inside the field
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.mic, color: Colors.green),
+                        onPressed: () {
+                          print("Microphone button pressed!");
+                        },
+                      ),
                     ),
                   ),
                 ),
