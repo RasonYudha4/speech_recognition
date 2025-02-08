@@ -1,7 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../services/api_service.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final APIService _apiService = APIService();
+  SpeechToText _speechToText = SpeechToText();
+  bool _speechEnabled = false;
+  final List<Map<String, dynamic>> _messages = [];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _sendMessage() async {
+    String message = _controller.text.trim();
+    if (message.isEmpty) return;
+
+    // ✅ Add sent message
+    setState(() {
+      _messages.add({'type': 'sent', 'message': message});
+      _messages.add({'type': 'loading'});
+    });
+
+    _controller.clear(); // Clear input field
+
+    try {
+      String summary = await _apiService.summarizeText(message);
+      print("API Response: $summary"); // Debug output
+
+      setState(() {
+        _messages.removeWhere((msg) => msg['type'] == 'loading');
+        _messages.add({'type': 'received', 'message': summary});
+      });
+    } catch (e) {
+      print("Error calling API: $e");
+      setState(() {
+        _messages.removeWhere((msg) => msg['type'] == 'loading');
+        _messages
+            .add({'type': 'received', 'message': 'Error processing request.'});
+      });
+    }
+  }
+
+  Future<bool> _initSpeech() async {
+    bool available = await _speechToText.initialize(
+      onStatus: (status) => print("Speech Status: $status"),
+      onError: (errorNotification) => print("Speech Error: $errorNotification"),
+    );
+
+    setState(() {
+      _speechEnabled = available;
+    });
+
+    if (!available) {
+      print("Speech recognition is not available on this device.");
+    }
+
+    return available;
+  }
+
+  void _startListening() async {
+    if (!_speechEnabled) {
+      await _initSpeech();
+    }
+
+    if (!_speechEnabled) {
+      print("Speech-to-Text is not available on this device.");
+      return;
+    }
+
+    await _speechToText.listen(onResult: _onSpeechResult);
+    setState(() {});
+  }
+
+  void _stopListening() async {
+    await _speechToText.stop();
+    setState(() {});
+  }
+
+  void _onSpeechResult(result) {
+    setState(() {
+      _controller.text = result.recognizedWords;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,69 +188,22 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0, right: 12),
-                  child: Align(
-                    alignment: Alignment.centerRight, // Align to the left
-                    child: Container(
-                      padding: EdgeInsets.all(16.0),
-                      margin: EdgeInsets.symmetric(vertical: 4.0),
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width *
-                            0.7, // Max 70% of screen width
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF133E1E),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(24.0),
-                          topRight: Radius.circular(24.0),
-                          bottomLeft: Radius.circular(24.0),
-                          bottomRight: Radius.circular(0),
-                        ),
-                      ),
-                      child: Text(
-                        "Hello, how are you? I hope that you are doing well, since I miss you a lot. Remember the day when we have our first night",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0, left: 12),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      padding: EdgeInsets.all(16.0),
-                      margin: EdgeInsets.symmetric(vertical: 4.0),
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        border: Border.all(
-                          color: Color(0xFF2FF761),
-                          width: 2.0,
-                        ),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(24.0),
-                          topRight: Radius.circular(24.0),
-                          bottomLeft: Radius.circular(0.0),
-                          bottomRight: Radius.circular(24.0),
-                        ),
-                      ),
-                      child: Text(
-                        "I'm good",
-                        style: TextStyle(
-                            color: Color(0xFF2FF761),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            child: ListView.builder(
+              padding: EdgeInsets.all(8.0),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+
+                if (msg['type'] == 'sent') {
+                  return MessageSent(message: msg['message']);
+                } else if (msg['type'] == 'received') {
+                  return MessageReceived(message: msg['message']);
+                } else if (msg['type'] == 'loading') {
+                  return LoadingMessage(); // ✅ Show loading animation
+                }
+
+                return SizedBox.shrink();
+              },
             ),
           ),
           Container(
@@ -223,51 +267,169 @@ class HomeScreen extends StatelessWidget {
                 ),
                 Expanded(
                   child: TextField(
-                    style: TextStyle(color: Colors.green), // Typed text color
+                    controller: _controller,
+                    style: TextStyle(color: Colors.green),
                     decoration: InputDecoration(
                       hintText: "Type a message...",
-                      hintStyle:
-                          TextStyle(color: Colors.green), // Hint text color
+                      hintStyle: TextStyle(color: Colors.green),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(24.0), // Rounded border
-                        borderSide: BorderSide(
-                            color: Colors.green, width: 2.0), // Green border
-                      ),
-                      enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24.0),
-                        borderSide: BorderSide(
-                            color: Colors.green,
-                            width: 2.0), // Green border when not focused
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24.0),
-                        borderSide: BorderSide(
-                            color: Colors.green,
-                            width: 2.5), // Green border when focused
+                        borderSide: BorderSide(color: Colors.green, width: 2.0),
                       ),
                       contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 12.0), // Padding inside the field
+                          horizontal: 16.0, vertical: 12.0),
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.mic, color: Colors.green),
-                        onPressed: () {
-                          print("Microphone button pressed!");
-                        },
+                        icon: Icon(
+                          _speechToText.isNotListening
+                              ? Icons.mic_off
+                              : Icons.mic,
+                          color: Colors.green,
+                        ),
+                        onPressed: _speechToText.isNotListening
+                            ? _startListening
+                            : _stopListening,
                       ),
                     ),
                   ),
                 ),
                 IconButton(
                   icon: Icon(Icons.send, color: Colors.green),
-                  onPressed: () {
-                    // Handle send message
-                  },
+                  onPressed: _sendMessage,
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class MessageReceived extends StatelessWidget {
+  final String message;
+  const MessageReceived({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0, left: 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: EdgeInsets.all(16.0),
+          margin: EdgeInsets.symmetric(vertical: 4.0),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.7,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            border: Border.all(
+              color: Color(0xFF2FF761),
+              width: 2.0,
+            ),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+              bottomLeft: Radius.circular(0.0),
+              bottomRight: Radius.circular(24.0),
+            ),
+          ),
+          child: Text(
+            message,
+            style: TextStyle(
+                color: Color(0xFF2FF761),
+                fontSize: 16,
+                fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LoadingMessage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0, left: 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: EdgeInsets.all(16.0),
+          margin: EdgeInsets.symmetric(vertical: 4.0),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.7,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            border: Border.all(
+              color: Color(0xFF2FF761),
+              width: 2.0,
+            ),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+              bottomLeft: Radius.circular(0.0),
+              bottomRight: Radius.circular(24.0),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2FF761)),
+                strokeWidth: 2.0,
+              ),
+              SizedBox(width: 10),
+              Text(
+                "Processing...",
+                style: TextStyle(
+                  color: Color(0xFF2FF761),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MessageSent extends StatelessWidget {
+  final String message;
+  const MessageSent({
+    super.key,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0, right: 12),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          padding: EdgeInsets.all(16.0),
+          margin: EdgeInsets.symmetric(vertical: 4.0),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.7,
+          ),
+          decoration: BoxDecoration(
+            color: Color(0xFF133E1E),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+              bottomLeft: Radius.circular(24.0),
+              bottomRight: Radius.circular(0),
+            ),
+          ),
+          child: Text(
+            message,
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
       ),
     );
   }
