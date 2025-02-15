@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -58,6 +59,15 @@ class _SummarizationScreenState extends State<SummarizationScreen> {
     }
   }
 
+  void _startNewChat() async {
+    if (_messages.isNotEmpty) {
+      await _saveChatSession();
+    }
+    setState(() {
+      _messages.clear();
+    });
+  }
+
   void _sendFile(File file, String fileType) async {
     setState(() {
       _messages
@@ -113,23 +123,25 @@ class _SummarizationScreenState extends State<SummarizationScreen> {
 
   Future<void> _loadChatHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    List<String>? chatHistory = prefs.getStringList('chat_history');
+    List<String>? chatSessions = prefs.getStringList('chat_sessions');
 
-    if (chatHistory != null) {
+    if (chatSessions != null && chatSessions.isNotEmpty) {
       setState(() {
-        _messages = chatHistory.map((msg) {
-          var parts = msg.split(':');
-          return {'type': parts[0], 'message': parts.sublist(1).join(':')};
-        }).toList();
+        _messages = jsonDecode(chatSessions.last).cast<Map<String, dynamic>>();
       });
     }
   }
 
   Future<void> _saveChatSession() async {
     final prefs = await SharedPreferences.getInstance();
-    List<String> chatHistory =
-        _messages.map((msg) => '${msg['type']}:${msg['message']}').toList();
-    await prefs.setStringList('chat_history', chatHistory);
+
+    List<String>? chatSessions = prefs.getStringList('chat_sessions') ?? [];
+
+    String newChatSession = jsonEncode(_messages);
+
+    chatSessions.add(newChatSession);
+
+    await prefs.setStringList('chat_sessions', chatSessions);
   }
 
   Future<bool> _initSpeech() async {
@@ -237,7 +249,9 @@ class _SummarizationScreenState extends State<SummarizationScreen> {
                           style: TextStyle(color: Colors.white, fontSize: 18)),
                     ),
                     ..._messages
-                        .where((msg) => msg['type'] == 'sent')
+                        .where((msg) =>
+                            msg['type'] == 'sent' ||
+                            msg['type'] == 'received') // Fetch all
                         .map((msg) {
                       return Container(
                         decoration: BoxDecoration(
@@ -248,7 +262,12 @@ class _SummarizationScreenState extends State<SummarizationScreen> {
                         child: ListTile(
                           contentPadding:
                               EdgeInsets.symmetric(horizontal: 20.0),
-                          leading: Icon(Icons.chat, color: Colors.white),
+                          leading: Icon(
+                            msg['type'] == 'sent'
+                                ? Icons.send
+                                : Icons.reply, // Different icons
+                            color: Colors.white,
+                          ),
                           title: Text(
                             msg['message'],
                             style: TextStyle(color: Colors.white),
@@ -274,6 +293,22 @@ class _SummarizationScreenState extends State<SummarizationScreen> {
                     Text(
                       "Start New Chat",
                       style: TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                    SizedBox(height: 10), // Adds spacing
+                    ElevatedButton(
+                      onPressed: _startNewChat,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        "New Chat",
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
